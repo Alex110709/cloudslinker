@@ -49,47 +49,58 @@ CloudsLinker는 PikPak, WebDAV, Synology NAS를 핵심으로 지원하는 차세
 - **인증 방식**: OAuth 2.0, API 키, 사용자명/비밀번호
 - **네트워크**: HTTP/2, Connection pooling, Retry mechanisms
 
-## Architecture
+## 아키텍처
 
-### System Architecture Overview
+### 시스템 아키텍처 개요
 
 ```mermaid
 graph TB
-    subgraph "Client Layer"
-        WEB[Web Application]
-        MOBILE[Mobile Web]
+    subgraph "클라이언트 레이어"
+        WEB[웹 애플리케이션<br/>한국어/영어 지원]
+        MOBILE[모바일 웹]
+        ADMIN[관리자 대시보드]
     end
     
-    subgraph "API Gateway"
-        GATEWAY[Load Balancer + API Gateway]
-        AUTH[Authentication Service]
+    subgraph "API 게이트웨이"
+        GATEWAY[로드밸런서 + API Gateway<br/>Nginx/HAProxy]
+        AUTH[인증 서비스<br/>OAuth 2.0 + JWT]
+        RATE[Rate Limiting]
     end
     
-    subgraph "Core Services"
-        TRANSFER[Transfer Engine]
-        SYNC[Sync Engine]
-        SCHEDULER[Task Scheduler]
-        MONITOR[Transfer Monitor]
+    subgraph "핵심 서비스"
+        TRANSFER[전송 엔진<br/>Stream Processing]
+        SYNC[동기화 엔진<br/>Bidirectional Sync]
+        SCHEDULER[작업 스케줄러<br/>Cron Jobs]
+        MONITOR[전솤 모니터<br/>Real-time Status]
+        PROVIDER[Cloud Provider Manager]
     end
     
-    subgraph "Data Layer"
-        POSTGRES[(PostgreSQL)]
-        REDIS[(Redis Cache)]
-        QUEUE[Task Queue]
+    subgraph "데이터 레이어"
+        POSTGRES[(타임시리즈 데이터<br/>PostgreSQL 15+)]
+        REDIS[(캐시 & 세션<br/>Redis 7+)]
+        QUEUE[작업 큐<br/>Bull Queue]
+        STORAGE[(파일 메타데이터<br/>Object Storage)]
     end
     
-    subgraph "Cloud Providers"
-        PIKPAK[PikPak]
-        WEBDAV[WebDAV/NAS]
-        SYNOLOGY[Synology NAS]
+    subgraph "핵심 클라우드 프로바이더"
+        PIKPAK[픽팩<br/>OAuth 2.0 + REST API]
+        WEBDAV[WebDAV/NAS<br/>Basic/Digest Auth]
+        SYNOLOGY[시놀로지 NAS<br/>DSM API 7.0+]
+    end
+    
+    subgraph "추가 프로바이더"
         GDRIVE[Google Drive]
         ONEDRIVE[OneDrive]
-        OTHERS[40+ Other Providers]
+        DROPBOX[Dropbox]
+        OTHERS[40+ 기타 프로바이더]
     end
     
     WEB --> GATEWAY
     MOBILE --> GATEWAY
+    ADMIN --> GATEWAY
+    
     GATEWAY --> AUTH
+    GATEWAY --> RATE
     GATEWAY --> TRANSFER
     GATEWAY --> SYNC
     GATEWAY --> SCHEDULER
@@ -97,17 +108,20 @@ graph TB
     TRANSFER --> MONITOR
     SYNC --> MONITOR
     SCHEDULER --> QUEUE
+    PROVIDER --> AUTH
     
     TRANSFER --> POSTGRES
     SYNC --> POSTGRES
     MONITOR --> REDIS
     QUEUE --> REDIS
+    AUTH --> STORAGE
     
     TRANSFER --> PIKPAK
     TRANSFER --> WEBDAV
     TRANSFER --> SYNOLOGY
     TRANSFER --> GDRIVE
     TRANSFER --> ONEDRIVE
+    TRANSFER --> DROPBOX
     TRANSFER --> OTHERS
 ```
 
