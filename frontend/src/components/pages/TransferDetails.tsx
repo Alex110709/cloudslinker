@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -32,8 +32,10 @@ import {
 } from '@ant-design/icons';
 import { useParams } from 'react-router-dom';
 import { useGetTransferJobQuery, useGetTransferProgressQuery } from '../../store';
+import { useTransferUpdates } from '../../hooks/useWebSocket';
 import { PageHeader } from '../layout/PageHeader';
 import { ProgressBar, LoadingSpinner, FileIcon } from '../common';
+import { ConnectionIndicator } from '../ConnectionIndicator';
 import { formatFileSize, formatRelativeTime, formatTransferSpeed, formatDuration } from '../../utils';
 import type { TransferJob, TransferProgress } from '../../types';
 
@@ -43,11 +45,25 @@ const { TabPane } = Tabs;
 export const TransferDetails: React.FC = () => {
   const { transferId } = useParams<{ transferId: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 
   const { data: transfer, isLoading } = useGetTransferJobQuery(transferId!);
   const { data: progress } = useGetTransferProgressQuery(transferId!, {
     pollingInterval: transfer?.status === 'running' ? 1000 : 0,
   });
+
+  // Real-time WebSocket updates
+  const { transferData, lastUpdate, requestStatus } = useTransferUpdates(transferId);
+
+  // Update last update time when receiving real-time data
+  useEffect(() => {
+    if (lastUpdate) {
+      setLastUpdateTime(lastUpdate);
+    }
+  }, [lastUpdate]);
+
+  // Merge real-time data with API data
+  const currentTransfer = transferData ? { ...transfer, ...transferData } : transfer;
 
   // Mock data for development
   const mockTransfer: TransferJob = {
@@ -523,14 +539,32 @@ export const TransferDetails: React.FC = () => {
     <div>
       <PageHeader
         title={`전송 작업 #${transferId}`}
-        subtitle={`${mockTransfer.sourcePath} → ${mockTransfer.destinationPath}`}
+        subtitle={
+          <Space direction="vertical" size={0}>
+            <Text>{`${mockTransfer.sourcePath} → ${mockTransfer.destinationPath}`}</Text>
+            <Space size={12}>
+              <ConnectionIndicator size="small" placement="inline" />
+              {lastUpdateTime && (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  마지막 업데이트: {formatRelativeTime(lastUpdateTime.toISOString())}
+                </Text>
+              )}
+            </Space>
+          </Space>
+        }
         breadcrumbs={[
           { title: '파일 전송', path: '/transfers' },
           { title: `전송 #${transferId}` },
         ]}
         extra={
           <Space>
-            <Button icon={<ReloadOutlined />} onClick={() => window.location.reload()}>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={() => {
+                window.location.reload();
+                requestStatus(); // Request fresh status via WebSocket
+              }}
+            >
               새로고침
             </Button>
             {mockTransfer.status === 'running' && (

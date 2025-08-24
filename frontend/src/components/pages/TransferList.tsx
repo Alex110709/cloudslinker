@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   Button,
@@ -42,8 +42,10 @@ import {
   useDeleteTransferMutation,
   useRetryTransferMutation,
 } from '../../store';
+import { useMultipleTransfers, useWebSocketConnection } from '../../hooks/useWebSocket';
 import { PageHeader } from '../layout/PageHeader';
 import { StatCard, LoadingSpinner, ProgressBar } from '../common';
+import { ConnectionIndicator } from '../ConnectionIndicator';
 import { formatFileSize, formatRelativeTime, formatTransferSpeed, formatDuration } from '../../utils';
 import type { TransferJob } from '../../types';
 
@@ -57,11 +59,24 @@ export const TransferList: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [pagination, setPagination] = useState({ page: 1, limit: 20 });
+  const [realTimeUpdates, setRealTimeUpdates] = useState<Record<string, any>>({});
 
   const { data, isLoading, refetch } = useGetTransferJobsQuery({
     ...pagination,
     status: statusFilter === 'all' ? undefined : statusFilter,
     search: searchText || undefined,
+  });
+
+  const { isConnected } = useWebSocketConnection();
+
+  // Get transfer IDs for real-time monitoring
+  const transferIds = mockTransfers.map(t => t.id);
+  const { transfersData, lastUpdates } = useMultipleTransfers(transferIds);
+
+  // Merge real-time data with mock data
+  const enhancedTransfers = mockTransfers.map(transfer => {
+    const realtimeData = transfersData[transfer.id];
+    return realtimeData ? { ...transfer, ...realtimeData } : transfer;
   });
 
   const [startTransfer] = useStartTransferMutation();
@@ -472,7 +487,12 @@ export const TransferList: React.FC = () => {
     <div>
       <PageHeader
         title="파일 전송"
-        subtitle="클라우드 간 파일 전송 작업을 관리하세요"
+        subtitle={
+          <Space>
+            <span>클라우드 간 파일 전송 작업을 관리하세요</span>
+            <ConnectionIndicator size="small" placement="inline" />
+          </Space>
+        }
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
@@ -573,11 +593,11 @@ export const TransferList: React.FC = () => {
           ) : (
             <Table
               columns={columns}
-              dataSource={mockTransfers}
+              dataSource={enhancedTransfers}
               rowKey="id"
               rowSelection={rowSelection}
               pagination={{
-                total: data?.pagination?.total || mockTransfers.length,
+                total: data?.pagination?.total || enhancedTransfers.length,
                 current: pagination.page,
                 pageSize: pagination.limit,
                 showSizeChanger: true,

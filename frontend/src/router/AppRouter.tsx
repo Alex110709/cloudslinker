@@ -1,11 +1,21 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import MainLayout from '../components/layout/MainLayout';
 import Dashboard from '../components/pages/Dashboard';
 import CloudProviderList from '../components/pages/CloudProviderList';
 import ConnectCloudProvider from '../components/pages/ConnectCloudProvider';
+import TransferList from '../components/pages/TransferList';
+import CreateTransfer from '../components/pages/CreateTransfer';
+import TransferDetails from '../components/pages/TransferDetails';
+import SyncList from '../components/pages/SyncList';
+import CreateSync from '../components/pages/CreateSync';
+import SyncDetails from '../components/pages/SyncDetails';
+import Login from '../components/pages/Login';
+import Register from '../components/pages/Register';
+import ForgotPassword from '../components/pages/ForgotPassword';
+import Profile from '../components/pages/Profile';
 import EmptyPage from '../components/common/EmptyPage';
 import { LoadingSpinner } from '../components/common';
 
@@ -16,15 +26,10 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const location = useLocation();
   
   if (!isAuthenticated) {
-    // For now, we'll just show a loading state
-    // In a real app, this would redirect to login
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner text="인증 확인 중..." />
-      </div>
-    );
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
@@ -54,11 +59,7 @@ export const AppRouter: React.FC = () => {
           path="/login"
           element={
             <PublicRoute>
-              <EmptyPage 
-                title="로그인 페이지" 
-                subtitle="로그인 인터페이스가 곧 구현될 예정입니다." 
-                showBackButton={false}
-              />
+              <Login />
             </PublicRoute>
           }
         />
@@ -66,11 +67,15 @@ export const AppRouter: React.FC = () => {
           path="/register"
           element={
             <PublicRoute>
-              <EmptyPage 
-                title="회원가입 페이지" 
-                subtitle="회원가입 인터페이스가 곧 구현될 예정입니다." 
-                showBackButton={false}
-              />
+              <Register />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
             </PublicRoute>
           }
         />
@@ -121,10 +126,7 @@ export const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <EmptyPage 
-                  title="파일 전송 관리" 
-                  subtitle="파일 전송 관리 인터페이스가 곧 구현될 예정입니다.\"
-                />
+                <TransferList />
               </MainLayout>
             </ProtectedRoute>
           }
@@ -134,10 +136,17 @@ export const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <EmptyPage 
-                  title="새 전송 만들기" 
-                  subtitle="전송 작업 생성 인터페이스가 곧 구현될 예정입니다.\"
-                />
+                <CreateTransfer />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/transfers/:transferId"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <TransferDetails />
               </MainLayout>
             </ProtectedRoute>
           }
@@ -147,10 +156,7 @@ export const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <EmptyPage 
-                  title="동기화 관리" 
-                  subtitle="동기화 작업 관리 인터페이스가 곧 구현될 예정입니다.\"
-                />
+                <SyncList />
               </MainLayout>
             </ProtectedRoute>
           }
@@ -160,10 +166,17 @@ export const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <EmptyPage 
-                  title="새 동기화 설정" 
-                  subtitle="동기화 설정 인터페이스가 곧 구현될 예정입니다.\"
-                />
+                <CreateSync />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sync/:syncId"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <SyncDetails />
               </MainLayout>
             </ProtectedRoute>
           }
@@ -186,10 +199,7 @@ export const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <EmptyPage 
-                  title="프로필" 
-                  subtitle="사용자 프로필 페이지가 곧 구현될 예정입니다.\"
-                />
+                <Profile />
               </MainLayout>
             </ProtectedRoute>
           }

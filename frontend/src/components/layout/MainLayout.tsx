@@ -17,6 +17,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectSidebarCollapsed, selectUser, selectNotifications } from '../../store';
 import { toggleSidebar, logout } from '../../store';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ConnectionIndicator } from '../ConnectionIndicator';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -147,8 +148,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             className="text-lg"
           />
 
-          {/* Right side - User menu and notifications */}
+          {/* Right side - Real-time status, notifications, and user menu */}
           <div className="flex items-center space-x-4">
+            {/* Real-time connection status */}
+            <ConnectionIndicator 
+              size="small" 
+              placement="header" 
+              showText={!collapsed}
+            />
+
             {/* Notifications */}
             <Badge count={unreadCount} size="small">
               <Button
