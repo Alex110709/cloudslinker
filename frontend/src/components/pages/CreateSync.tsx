@@ -34,6 +34,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateSyncJobMutation, useGetCloudProvidersQuery } from '../../store';
 import { PageHeader } from '../layout/PageHeader';
 import { LoadingSpinner } from '../common';
+import { useI18n } from '../../hooks/useI18n';
 import type { SyncJob, CreateSyncJobRequest } from '../../types';
 import dayjs from 'dayjs';
 
@@ -48,6 +49,7 @@ export const CreateSync: React.FC = () => {
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<CreateSyncJobRequest>>({});
+  const { t } = useI18n();
 
   const { data: cloudProviders, isLoading: loadingProviders } = useGetCloudProvidersQuery();
   const [createSyncJob, { isLoading: creating }] = useCreateSyncJobMutation();
@@ -115,10 +117,10 @@ export const CreateSync: React.FC = () => {
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      message.success('동기화 작업이 성공적으로 생성되었습니다!');
+      message.success(t('sync.createSuccess'));
       navigate('/sync');
     } catch (error: any) {
-      message.error(error?.data?.message || '동기화 작업 생성 중 오류가 발생했습니다.');
+      message.error(error?.data?.message || t('sync.createFailed'));
     }
   };
 

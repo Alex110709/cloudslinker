@@ -18,6 +18,8 @@ import { selectSidebarCollapsed, selectUser, selectNotifications } from '../../s
 import { toggleSidebar, logout } from '../../store';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ConnectionIndicator } from '../ConnectionIndicator';
+import { LanguageSwitcher } from '../LanguageSwitcher';
+import { useI18n } from '../../hooks/useI18n';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -30,6 +32,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useI18n();
   
   const collapsed = useAppSelector(selectSidebarCollapsed);
   const user = useAppSelector(selectUser);
@@ -42,27 +45,27 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: '대시보드',
+      label: t('navigation.dashboard'),
     },
     {
       key: '/clouds',
       icon: <CloudOutlined />,
-      label: '클라우드 관리',
+      label: t('navigation.cloudManagement'),
     },
     {
       key: '/transfers',
       icon: <SwapOutlined />,
-      label: '파일 전송',
+      label: t('navigation.fileTransfer'),
     },
     {
       key: '/sync',
       icon: <SyncOutlined />,
-      label: '동기화',
+      label: t('navigation.synchronization'),
     },
     {
       key: '/settings',
       icon: <SettingOutlined />,
-      label: '설정',
+      label: t('navigation.settings'),
     },
   ];
 
@@ -71,13 +74,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     {
       key: 'profile',
       icon: <ProfileOutlined />,
-      label: '프로필',
+      label: t('common.profile'),
       onClick: () => navigate('/profile'),
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: '계정 설정',
+      label: t('common.accountSettings'),
       onClick: () => navigate('/account'),
     },
     {
@@ -86,7 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '로그아웃',
+      label: t('auth.logout'),
       onClick: () => {
         dispatch(logout());
         navigate('/login');
@@ -148,8 +151,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             className="text-lg"
           />
 
-          {/* Right side - Real-time status, notifications, and user menu */}
+          {/* Right side - Language switcher, real-time status, notifications, and user menu */}
           <div className="flex items-center space-x-4">
+            {/* Language switcher */}
+            <LanguageSwitcher />
+
             {/* Real-time connection status */}
             <ConnectionIndicator 
               size="small" 

@@ -38,6 +38,7 @@ import { selectUser } from '../../store/slices/authSlice';
 import { useUpdateProfileMutation, useChangePasswordMutation, useUploadAvatarMutation } from '../../store';
 import { PageHeader } from '../layout/PageHeader';
 import { formatRelativeTime, formatFileSize } from '../../utils';
+import { useI18n } from '../../hooks/useI18n';
 import type { UpdateProfileRequest, ChangePasswordRequest } from '../../types';
 
 const { Title, Text } = Typography;
@@ -49,6 +50,7 @@ export const Profile: React.FC = () => {
   const [passwordForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('profile');
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const { t } = useI18n();
   
   const user = useAppSelector(selectUser);
   
@@ -93,20 +95,20 @@ export const Profile: React.FC = () => {
   const handleProfileUpdate = async (values: UpdateProfileRequest) => {
     try {
       await updateProfile(values).unwrap();
-      message.success('프로필이 성공적으로 업데이트되었습니다.');
+      message.success(t('profile.updateSuccess'));
     } catch (error: any) {
-      message.error(error?.data?.message || '프로필 업데이트에 실패했습니다.');
+      message.error(error?.data?.message || t('profile.updateFailed'));
     }
   };
 
   const handlePasswordChange = async (values: ChangePasswordRequest) => {
     try {
       await changePassword(values).unwrap();
-      message.success('비밀번호가 성공적으로 변경되었습니다.');
+      message.success(t('profile.passwordChangeSuccess'));
       setPasswordModalVisible(false);
       passwordForm.resetFields();
     } catch (error: any) {
-      message.error(error?.data?.message || '비밀번호 변경에 실패했습니다.');
+      message.error(error?.data?.message || t('profile.passwordChangeFailed'));
     }
   };
 
@@ -115,9 +117,9 @@ export const Profile: React.FC = () => {
       const formData = new FormData();
       formData.append('avatar', file);
       await uploadAvatar(formData).unwrap();
-      message.success('프로필 사진이 성공적으로 변경되었습니다.');
+      message.success(t('profile.avatarUploadSuccess'));
     } catch (error: any) {
-      message.error(error?.data?.message || '프로필 사진 업로드에 실패했습니다.');
+      message.error(error?.data?.message || t('profile.avatarUploadFailed'));
     }
     return false; // Prevent default upload behavior
   };
