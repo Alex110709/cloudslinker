@@ -2,48 +2,52 @@
 
 ## Overview
 
-CloudsLinker is a comprehensive cloud storage management platform that enables seamless cloud-to-cloud transfers, synchronization, and unified management across multiple storage providers. The platform specializes in direct cloud-to-cloud operations with zero local bandwidth consumption, supporting over 40+ storage services including PikPak, WebDAV, and Synology NAS.
+CloudsLinker는 PikPak, WebDAV, Synology NAS를 핵심으로 지원하는 차세대 클라우드 스토리지 관리 플랫폼입니다. 로컬 대역폭을 전혀 사용하지 않는 클라우드 간 직접 전송을 통해 효율적이고 안전한 데이터 이동을 제공합니다.
 
-### Core Value Proposition
-- **Zero Local Impact**: All transfers occur directly between cloud services without consuming local bandwidth
-- **Universal Compatibility**: Support for 40+ cloud storage providers
-- **Advanced Filtering**: Precision file selection with refined criteria
-- **Automated Operations**: Scheduled tasks and concurrent multi-task execution
-- **Enterprise Security**: 256-bit AES encryption, OAuth authentication, GDPR compliance
+### 핵심 가치 제안
+- **제로 로컬 임팩트**: 모든 전송이 클라우드 간 직접 발생하여 로컬 대역폭 소비 없음
+- **핵심 프로바이더 지원**: PikPak, WebDAV, Synology NAS 완벽 지원
+- **고급 필터링**: 정밀한 파일 선택 및 조건부 전송
+- **자동화 작업**: 스케줄링된 동기화 및 멀티태스크 실행
+- **엔터프라이즈 보안**: 256-bit AES 암호화, OAuth 인증, GDPR 준수
 
-### Key Features
-- Cloud-to-cloud transfers and synchronization
-- Multi-provider account management
-- Advanced file filtering and selection
-- Scheduled and automated tasks
-- Real-time transfer monitoring
-- Comprehensive security and privacy protection
+### 주요 기능
+- 클라우드 간 전송 및 동기화
+- 다중 프로바이더 계정 통합 관리
+- 고급 파일 필터링 및 선택
+- 스케줄링된 자동화 작업
+- 실시간 전송 모니터링
+- 포괄적인 보안 및 개인정보 보호
 
-## Technology Stack & Dependencies
+## 기술 스택 및 의존성
 
-### Frontend Architecture
-- **Framework**: React.js with TypeScript
-- **State Management**: Redux Toolkit with RTK Query
-- **UI Library**: Ant Design / Material-UI
-- **Styling**: Tailwind CSS with CSS-in-JS
-- **Routing**: React Router v6
-- **Build Tool**: Vite
-- **Testing**: Jest + React Testing Library
+### 프론트엔드 아키텍처
+- **프레임워크**: React.js 18+ with TypeScript
+- **상태 관리**: Redux Toolkit with RTK Query
+- **UI 라이브러리**: Ant Design Pro (한국어 지원)
+- **스타일링**: Tailwind CSS + Styled Components
+- **라우팅**: React Router v6
+- **빌드 도구**: Vite 4.0+
+- **테스팅**: Jest + React Testing Library + Cypress
+- **국제화**: React i18next (한국어/영어 지원)
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js
-- **Language**: TypeScript
-- **Database**: PostgreSQL with Redis for caching
-- **Authentication**: OAuth 2.0 + JWT
-- **Task Queue**: Bull Queue with Redis
-- **File Processing**: Stream-based processing
-- **API Documentation**: OpenAPI/Swagger
+### 백엔드 아키텍처
+- **런타임**: Node.js 18+ with Express.js
+- **언어**: TypeScript 5.0+
+- **데이터베이스**: PostgreSQL 15+ with Redis 7+ for caching
+- **인증**: OAuth 2.0 + JWT with refresh tokens
+- **작업 큐**: Bull Queue 4.0+ with Redis
+- **파일 처리**: Stream-based processing with memory optimization
+- **API 문서**: OpenAPI 3.0 + Swagger UI
+- **로깅**: Winston with structured logging
 
-### Cloud Integration Layer
-- **Provider SDKs**: Native SDKs for major providers
-- **Protocol Support**: WebDAV, FTP, SFTP, S3-compatible APIs
-- **Authentication**: OAuth 2.0, API keys, username/password
-- **Network**: HTTP/HTTPS with retry mechanisms
+### 클라우드 통합 레이어
+- **PikPak SDK**: Custom TypeScript SDK with OAuth 2.0
+- **WebDAV 클라이언트**: webdav library with custom extensions
+- **Synology API**: DSM API integration with session management
+- **프로토콜 지원**: WebDAV, HTTPS, FTP/SFTP
+- **인증 방식**: OAuth 2.0, API 키, 사용자명/비밀번호
+- **네트워크**: HTTP/2, Connection pooling, Retry mechanisms
 
 ## Architecture
 
