@@ -218,6 +218,7 @@ export interface Notification {
   title: string;
   message?: string;
   duration?: number;
+  read?: boolean;
   createdAt: string;
 }
 
