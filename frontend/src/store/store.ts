@@ -6,6 +6,7 @@ import { transfersApi } from './api/transfersApi';
 import { syncApi } from './api/syncApi';
 import authSlice from './slices/authSlice';
 import uiSlice from './slices/uiSlice';
+import { webSocketMiddleware, setupWebSocketListeners } from './webSocketMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -35,13 +36,17 @@ export const store = configureStore({
       authApi.middleware,
       cloudProvidersApi.middleware,
       transfersApi.middleware,
-      syncApi.middleware
+      syncApi.middleware,
+      webSocketMiddleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
 // Enable refetchOnFocus/refetchOnReconnect behaviors
 setupListeners(store.dispatch);
+
+// Setup WebSocket listeners for real-time updates
+setupWebSocketListeners(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

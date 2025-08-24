@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { Server } from 'socket.io';
 import { createServer } from 'http';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
@@ -12,6 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 import { initializeDatabase, closeDatabase, checkDatabaseHealth } from './database/connection';
 import { cloudProviderFactory } from './providers/CloudProviderFactory';
 import { queueManager, queueScheduler } from './services/QueueManager';
+import { initializeWebSocketService, getWebSocketService } from './services/WebSocketService';
 import apiRouter from './routes/api';
 import { handleAuthError } from './middleware/auth';
 import winston from 'winston';
@@ -43,19 +43,12 @@ const logger = winston.createLogger({
 class CloudsLinkerServer {
   private app: Express;
   private server: any;
-  private io: Server;
   private port: number;
 
   constructor() {
     this.app = express();
     this.port = parseInt(process.env.PORT || '3001');
     this.server = createServer(this.app);
-    this.io = new Server(this.server, {
-      cors: {
-        origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-        credentials: true
-      }
-    });
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -176,81 +169,83 @@ class CloudsLinkerServer {
   }
 
   private setupWebSocket(): void {
-    this.io.on('connection', (socket) => {
-      logger.info(`Client connected: ${socket.id}`);
-
-      // Join user-specific room for real-time updates
-      socket.on('join', (data) => {
-        const { userId } = data;
-        if (userId) {
-          socket.join(`user:${userId}`);
-          logger.debug(`User ${userId} joined room`);
-        }
-      });
-
-      // Handle disconnect
-      socket.on('disconnect', () => {
-        logger.info(`Client disconnected: ${socket.id}`);
-      });
-    });
-
+    // Initialize WebSocket service
+    initializeWebSocketService(this.server);
+    
     // Set up real-time event listeners
     this.setupRealtimeEvents();
   }
 
   private setupRealtimeEvents(): void {
+    const webSocketService = getWebSocketService();
+    
     // Transfer events
     const { transferEngine } = require('./services/TransferEngine');
     
     transferEngine.on('jobCreated', (job: any) => {
-      this.io.to(`user:${job.userId}`).emit('transferCreated', job);
+      webSocketService.broadcastTransferStatus(job);
     });
 
     transferEngine.on('jobUpdated', (job: any) => {
-      this.io.to(`user:${job.userId}`).emit('transferUpdated', job);
+      webSocketService.broadcastTransferStatus(job);
+    });
+
+    transferEngine.on('jobProgress', (job: any) => {
+      webSocketService.broadcastTransferProgress(job);
     });
 
     // Sync events
     const { syncEngine } = require('./services/SyncEngine');
     
     syncEngine.on('syncJobCreated', (job: any) => {
-      this.io.to(`user:${job.userId}`).emit('syncCreated', job);
+      webSocketService.broadcastSyncStatus(job);
     });
 
     syncEngine.on('syncJobUpdated', (job: any) => {
-      this.io.to(`user:${job.userId}`).emit('syncUpdated', job);
+      webSocketService.broadcastSyncStatus(job);
+    });
+
+    syncEngine.on('syncJobProgress', (job: any) => {
+      webSocketService.broadcastSyncProgress(job);
     });
 
     // Queue events
     queueManager.on('jobCompleted', ({ queueName, job, result }) => {
       if (job.data.userId) {
-        this.io.to(`user:${job.data.userId}`).emit('jobCompleted', {
-          queueName,
-          jobId: job.id,
-          type: job.data.type,
-          result
+        webSocketService.broadcastNotification(job.data.userId, {
+          type: 'success',
+          title: '작업 완료',
+          message: `${job.data.type} 작업이 성공적으로 완료되었습니다.`,
+          data: { queueName, jobId: job.id, result }
         });
       }
     });
 
     queueManager.on('jobFailed', ({ queueName, job, error }) => {
       if (job.data.userId) {
-        this.io.to(`user:${job.data.userId}`).emit('jobFailed', {
-          queueName,
-          jobId: job.id,
-          type: job.data.type,
-          error: error.message
+        webSocketService.broadcastNotification(job.data.userId, {
+          type: 'error',
+          title: '작업 실패',
+          message: `${job.data.type} 작업이 실패했습니다: ${error.message}`,
+          data: { queueName, jobId: job.id, error: error.message }
         });
       }
     });
 
     queueManager.on('jobProgress', ({ queueName, job, progress }) => {
-      if (job.data.userId) {
-        this.io.to(`user:${job.data.userId}`).emit('jobProgress', {
-          queueName,
-          jobId: job.id,
-          type: job.data.type,
-          progress
+      if (job.data.userId && job.data.type === 'transfer') {
+        webSocketService.broadcastTransferProgress({
+          id: job.id,
+          userId: job.data.userId,
+          progress: progress,
+          status: 'in_progress'
+        });
+      } else if (job.data.userId && job.data.type === 'sync') {
+        webSocketService.broadcastSyncProgress({
+          id: job.id,
+          userId: job.data.userId,
+          progress: progress,
+          status: 'in_progress'
         });
       }
     });
@@ -339,9 +334,12 @@ class CloudsLinkerServer {
       }
 
       // Close WebSocket server
-      if (this.io) {
-        this.io.close();
-        logger.info('WebSocket server closed');
+      try {
+        const webSocketService = getWebSocketService();
+        webSocketService.close();
+        logger.info('WebSocket service closed');
+      } catch (error) {
+        logger.warn('WebSocket service was not initialized or already closed');
       }
 
       // Shutdown queue manager
@@ -364,10 +362,6 @@ class CloudsLinkerServer {
 
   public getApp(): Express {
     return this.app;
-  }
-
-  public getIO(): Server {
-    return this.io;
   }
 }
 
